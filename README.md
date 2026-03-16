@@ -7,29 +7,35 @@
 
   <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
     <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+API NestJS para focos de calor con configuracion basada en variables de entorno, validacion centralizada y soporte para despliegue portable con Docker.
 
 ## Project setup
 
 ```bash
 $ yarn install
 ```
+
+## Environment variables
+
+Usa `.env.template` como base para crear tu archivo `.env`.
+
+Variables principales:
+
+- `PORT`: puerto donde expone la API.
+- `NODE_ENV`: `development`, `test` o `production`.
+- `TZ`: zona horaria de la aplicacion. Por defecto `America/La_Paz`.
+- `MAP_KEY`: clave obligatoria para integraciones de mapas e ingestas automaticas.
+- `DATABASE_URL`: cadena completa de conexion a PostgreSQL, pensada especialmente para Neon. Si esta vacia, se usan las variables `DB_*`.
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`: conexion desglosada a PostgreSQL.
+- `DB_SSL`: habilita SSL para la base de datos.
+- `DB_SYNCHRONIZE`: controla `synchronize` de TypeORM.
+- `DB_LOGGING`: habilita logs SQL de TypeORM.
+- `DOCKER_DB_HOST`, `DOCKER_DB_PORT`: conexion interna que usa la API cuando corre dentro de Docker Compose.
+
+La API valida estas variables al arrancar y detiene la ejecucion si falta alguna obligatoria o si tiene formato invalido.
 
 ## Compile and run the project
 
@@ -43,6 +49,21 @@ $ yarn run start:dev
 # production mode
 $ yarn run start:prod
 ```
+
+## Docker
+
+Para levantar la API junto a PostgreSQL:
+
+```bash
+docker compose up --build
+```
+
+Detalles de la configuracion:
+
+- La aplicacion y PostgreSQL usan la zona horaria `America/La_Paz`.
+- `docker-compose.yml` toma los valores unicamente desde `.env`, sin valores por defecto embebidos.
+- Dentro de Docker, la API se conecta al servicio `db` usando `DOCKER_DB_HOST` y `DOCKER_DB_PORT`.
+- Los datos de PostgreSQL se guardan en el volumen `postgres_data`.
 
 ## Run tests
 

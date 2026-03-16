@@ -1,22 +1,28 @@
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { EnvironmentVariables } from './env.validation';
 
-export function getDatabaseConfig(): TypeOrmModuleOptions {
-  const hasDatabaseUrl = !!process.env.DATABASE_URL;
+export function getDatabaseConfig(
+  configService: ConfigService<EnvironmentVariables>,
+): TypeOrmModuleOptions {
+  const databaseUrl = configService.get<string>('DATABASE_URL');
+  const hasDatabaseUrl = Boolean(databaseUrl);
 
   return {
     type: 'postgres',
-    url: hasDatabaseUrl ? process.env.DATABASE_URL : undefined,
-    host: hasDatabaseUrl ? undefined : process.env.DB_HOST,
-    port: hasDatabaseUrl ? undefined : Number(process.env.DB_PORT ?? 5432),
-    username: hasDatabaseUrl ? undefined : process.env.DB_USERNAME,
-    password: hasDatabaseUrl ? undefined : process.env.DB_PASSWORD,
-    database: hasDatabaseUrl ? undefined : process.env.DB_NAME,
-    ssl:
-      process.env.DB_SSL === 'true'
-        ? { rejectUnauthorized: false }
-        : false,
+    url: hasDatabaseUrl ? databaseUrl : undefined,
+    host: hasDatabaseUrl ? undefined : configService.getOrThrow<string>('DB_HOST'),
+    port: hasDatabaseUrl ? undefined : configService.getOrThrow<number>('DB_PORT'),
+    username: hasDatabaseUrl
+      ? undefined
+      : configService.getOrThrow<string>('DB_USERNAME'),
+    password: hasDatabaseUrl
+      ? undefined
+      : configService.getOrThrow<string>('DB_PASSWORD'),
+    database: hasDatabaseUrl ? undefined : configService.getOrThrow<string>('DB_NAME'),
+    ssl: configService.get<boolean>('DB_SSL') ? { rejectUnauthorized: false } : false,
     autoLoadEntities: true,
-    synchronize: process.env.DB_SYNCHRONIZE === 'true',
-    logging: process.env.DB_LOGGING === 'true',
+    synchronize: configService.get<boolean>('DB_SYNCHRONIZE', false),
+    logging: configService.get<boolean>('DB_LOGGING', false),
   };
 }
