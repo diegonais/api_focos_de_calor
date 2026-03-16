@@ -21,6 +21,7 @@ export enum DetectionSourceType {
 @Index('IDX_detections_latitude_longitude', ['latitude', 'longitude'])
 @Index('IDX_detections_satellite', ['satellite'])
 @Index('IDX_detections_source_type', ['sourceType'])
+@Index('UQ_detections_dedupe_key', ['dedupeKey'], { unique: true })
 export class Detection {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -68,6 +69,14 @@ export class Detection {
 
   @Column({ type: 'char', length: 1 })
   daynight!: string;
+
+  @Column({
+    name: 'dedupe_key',
+    type: 'varchar',
+    length: 64,
+    select: false,
+  })
+  dedupeKey!: string;
 
   @CreateDateColumn({
     name: 'created_at',

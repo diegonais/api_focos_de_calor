@@ -4,7 +4,7 @@ export function buildSwaggerConfig(): Omit<OpenAPIObject, 'paths'> {
   return new DocumentBuilder()
     .setTitle('API Focos de Calor')
     .setDescription(
-      'Base profesional del backend en NestJS para la gestion de focos de calor.',
+      'API REST de consulta para focos de calor en Bolivia, documentada para consumo publico.',
     )
     .setVersion('1.0.0')
     .build();

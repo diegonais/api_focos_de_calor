@@ -4,10 +4,11 @@ import { Injectable } from '@nestjs/common';
 export class HealthService {
   getStatus() {
     return {
-      status: 'ok',
-      service: 'api_focos_de_calor',
-      timestamp: new Date().toISOString(),
-      uptime: Math.round(process.uptime()),
+      success: true,
+      message: 'Service is healthy',
+      data: {
+        status: 'ok',
+      },
     };
   }
 }

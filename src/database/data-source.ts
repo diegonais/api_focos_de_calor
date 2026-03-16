@@ -4,11 +4,13 @@ import 'reflect-metadata';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
 import { Detection } from '../detections/entities/detection.entity';
+import { IngestionRun } from '../firms/entities/ingestion-run.entity';
 import { ModisDetail } from '../modis_details/entities/modis_detail.entity';
 import { ViirsDetail } from '../viirs_details/entities/viirs_detail.entity';
 import { CreateDetectionsTable20260316110100 } from './migrations/20260316110100-CreateDetectionsTable';
 import { CreateModisDetailsTable20260316110300 } from './migrations/20260316110300-CreateModisDetailsTable';
 import { CreateViirsDetailsTable20260316110200 } from './migrations/20260316110200-CreateViirsDetailsTable';
+import { AddDetectionDedupeKeyAndIngestionRuns20260316120000 } from './migrations/20260316120000-AddDetectionDedupeKeyAndIngestionRuns';
 
 function parseBoolean(value: string | undefined, fallback = false): boolean {
   if (value === undefined) {
@@ -42,11 +44,12 @@ const dataSourceOptions: DataSourceOptions = {
   ssl: useSsl ? { rejectUnauthorized: false } : false,
   synchronize: false,
   logging: parseBoolean(process.env.DB_LOGGING),
-  entities: [Detection, ViirsDetail, ModisDetail],
+  entities: [Detection, ViirsDetail, ModisDetail, IngestionRun],
   migrations: [
     CreateDetectionsTable20260316110100,
     CreateViirsDetailsTable20260316110200,
     CreateModisDetailsTable20260316110300,
+    AddDetectionDedupeKeyAndIngestionRuns20260316120000,
   ],
 };
 

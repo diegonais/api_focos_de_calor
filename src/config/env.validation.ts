@@ -1,8 +1,23 @@
+import {
+  DEFAULT_FIRMS_SOURCES,
+  FIRMS_MAX_DAY_RANGE,
+  FirmsSource,
+} from '../firms/firms.constants';
+
 export interface EnvironmentVariables {
   NODE_ENV: 'development' | 'test' | 'production';
   PORT: number;
   TZ: string;
   MAP_KEY: string;
+  FIRMS_MAP_KEY: string;
+  FIRMS_BASE_URL: string;
+  FIRMS_BBOX: string;
+  FIRMS_ENABLED_SOURCES: FirmsSource[];
+  FIRMS_INITIAL_SYNC_START_DATE: string;
+  FIRMS_LOOKBACK_DAYS: number;
+  FIRMS_SYNC_EVERY_MINUTES: number;
+  FIRMS_RUN_ON_BOOT: boolean;
+  FIRMS_REQUEST_TIMEOUT_MS: number;
   DATABASE_URL?: string;
   DB_HOST?: string;
   DB_PORT: number;
@@ -54,6 +69,27 @@ function parsePort(
   return parsedValue;
 }
 
+function parsePositiveInteger(
+  key: string,
+  value: string | undefined,
+  fallback: number,
+  errors: string[],
+  minimum = 1,
+): number {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsedValue = Number(value);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < minimum) {
+    errors.push(`${key} debe ser un numero entero mayor o igual a ${minimum}.`);
+    return fallback;
+  }
+
+  return parsedValue;
+}
+
 function parseBoolean(
   key: string,
   value: string | undefined,
@@ -74,6 +110,47 @@ function parseBoolean(
 
   errors.push(`${key} debe ser "true" o "false".`);
   return fallback;
+}
+
+function parseCsvList(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+function validateBbox(value: string, errors: string[]): void {
+  const parts = value.split(',').map((item) => item.trim());
+
+  if (parts.length !== 4) {
+    errors.push(
+      'FIRMS_BBOX debe tener cuatro coordenadas en formato minLon,minLat,maxLon,maxLat.',
+    );
+    return;
+  }
+
+  const hasInvalidCoordinate = parts.some((item) => !Number.isFinite(Number(item)));
+
+  if (hasInvalidCoordinate) {
+    errors.push(`FIRMS_BBOX debe contener coordenadas numericas validas.`);
+  }
+}
+
+function validateIsoDate(key: string, value: string, errors: string[]): void {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    errors.push(`${key} debe tener formato YYYY-MM-DD.`);
+    return;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00.000Z`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    errors.push(`${key} debe ser una fecha valida.`);
+  }
 }
 
 function validateTimeZone(timeZone: string, errors: string[]): void {
@@ -99,10 +176,75 @@ export function validateEnv(config: EnvRecord): EnvironmentVariables {
   const port = parsePort('PORT', getStringValue(config, 'PORT'), 3000, errors);
   const timeZone = getStringValue(config, 'TZ') ?? 'America/La_Paz';
   const mapKey = getStringValue(config, 'MAP_KEY');
+  const firmsMapKey = getStringValue(config, 'FIRMS_MAP_KEY') ?? mapKey;
   validateTimeZone(timeZone, errors);
 
-  if (!mapKey) {
-    errors.push(`MAP_KEY es obligatoria.`);
+  if (!mapKey && !firmsMapKey) {
+    errors.push(`MAP_KEY o FIRMS_MAP_KEY es obligatoria.`);
+  }
+
+  const firmsBaseUrl =
+    getStringValue(config, 'FIRMS_BASE_URL') ??
+    'https://firms.modaps.eosdis.nasa.gov/api/area/csv';
+  const firmsBbox =
+    getStringValue(config, 'FIRMS_BBOX') ?? '-69.8,-22.9,-57.4,-9.6';
+  const firmsEnabledSourcesRaw = parseCsvList(
+    getStringValue(config, 'FIRMS_ENABLED_SOURCES') ??
+      DEFAULT_FIRMS_SOURCES.join(','),
+  );
+  const firmsInitialSyncStartDate =
+    getStringValue(config, 'FIRMS_INITIAL_SYNC_START_DATE') ?? '2026-01-01';
+  const firmsLookbackDays = parsePositiveInteger(
+    'FIRMS_LOOKBACK_DAYS',
+    getStringValue(config, 'FIRMS_LOOKBACK_DAYS'),
+    4,
+    errors,
+  );
+  const firmsSyncEveryMinutes = parsePositiveInteger(
+    'FIRMS_SYNC_EVERY_MINUTES',
+    getStringValue(config, 'FIRMS_SYNC_EVERY_MINUTES'),
+    5,
+    errors,
+  );
+  const firmsRunOnBoot = parseBoolean(
+    'FIRMS_RUN_ON_BOOT',
+    getStringValue(config, 'FIRMS_RUN_ON_BOOT'),
+    true,
+    errors,
+  );
+  const firmsRequestTimeoutMs = parsePositiveInteger(
+    'FIRMS_REQUEST_TIMEOUT_MS',
+    getStringValue(config, 'FIRMS_REQUEST_TIMEOUT_MS'),
+    15000,
+    errors,
+    1000,
+  );
+
+  validateBbox(firmsBbox, errors);
+  validateIsoDate(
+    'FIRMS_INITIAL_SYNC_START_DATE',
+    firmsInitialSyncStartDate,
+    errors,
+  );
+
+  if (firmsLookbackDays > FIRMS_MAX_DAY_RANGE) {
+    errors.push(
+      `FIRMS_LOOKBACK_DAYS no puede ser mayor a ${FIRMS_MAX_DAY_RANGE} para el endpoint area de FIRMS.`,
+    );
+  }
+
+  if (firmsEnabledSourcesRaw.length === 0) {
+    errors.push(`FIRMS_ENABLED_SOURCES debe incluir al menos una fuente.`);
+  }
+
+  const invalidFirmsSources = firmsEnabledSourcesRaw.filter(
+    (source) => !Object.values(FirmsSource).includes(source as FirmsSource),
+  );
+
+  if (invalidFirmsSources.length > 0) {
+    errors.push(
+      `FIRMS_ENABLED_SOURCES contiene valores invalidos: ${invalidFirmsSources.join(', ')}.`,
+    );
   }
 
   const databaseUrl = getStringValue(config, 'DATABASE_URL');
@@ -151,7 +293,16 @@ export function validateEnv(config: EnvRecord): EnvironmentVariables {
     NODE_ENV: nodeEnv ?? 'development',
     PORT: port,
     TZ: timeZone,
-    MAP_KEY: mapKey ?? '',
+    MAP_KEY: mapKey ?? firmsMapKey ?? '',
+    FIRMS_MAP_KEY: firmsMapKey ?? mapKey ?? '',
+    FIRMS_BASE_URL: firmsBaseUrl,
+    FIRMS_BBOX: firmsBbox,
+    FIRMS_ENABLED_SOURCES: firmsEnabledSourcesRaw as FirmsSource[],
+    FIRMS_INITIAL_SYNC_START_DATE: firmsInitialSyncStartDate,
+    FIRMS_LOOKBACK_DAYS: firmsLookbackDays,
+    FIRMS_SYNC_EVERY_MINUTES: firmsSyncEveryMinutes,
+    FIRMS_RUN_ON_BOOT: firmsRunOnBoot,
+    FIRMS_REQUEST_TIMEOUT_MS: firmsRequestTimeoutMs,
     DATABASE_URL: databaseUrl,
     DB_HOST: dbHost,
     DB_PORT: dbPort,

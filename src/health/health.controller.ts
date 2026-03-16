@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { HealthResponseDto } from './dto/health-response.dto';
 import { HealthService } from './health.service';
 
 @ApiTags('health')
@@ -9,8 +10,10 @@ export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Consultar el estado del servicio' })
   @ApiOkResponse({
     description: 'Estado basico de la API.',
+    type: HealthResponseDto,
   })
   getStatus() {
     return this.healthService.getStatus();
