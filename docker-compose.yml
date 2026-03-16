@@ -1,31 +1,4 @@
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: api_focos_de_calor
-    restart: always
-    env_file:
-      - .env
-    environment:
-      TZ: ${TZ}
-      NODE_ENV: ${NODE_ENV}
-      PORT: ${PORT}
-      DATABASE_URL: ${DATABASE_URL}
-      DB_HOST: ${DOCKER_DB_HOST}
-      DB_PORT: ${DOCKER_DB_PORT}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      DB_SSL: ${DB_SSL}
-      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE}
-      DB_LOGGING: ${DB_LOGGING}
-    ports:
-      - '${PORT}:${PORT}'
-    depends_on:
-      db:
-        condition: service_healthy
-
   db:
     image: postgres:16-alpine
     container_name: api_focos_de_calor_db

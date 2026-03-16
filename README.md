@@ -10,7 +10,7 @@
 
 ## Description
 
-API NestJS para focos de calor con configuracion basada en variables de entorno, validacion centralizada y soporte para despliegue portable con Docker.
+API NestJS para focos de calor con configuracion basada en variables de entorno, validacion centralizada y soporte para PostgreSQL con Docker.
 
 ## Project setup
 
@@ -33,7 +33,6 @@ Variables principales:
 - `DB_SSL`: habilita SSL para la base de datos.
 - `DB_SYNCHRONIZE`: controla `synchronize` de TypeORM.
 - `DB_LOGGING`: habilita logs SQL de TypeORM.
-- `DOCKER_DB_HOST`, `DOCKER_DB_PORT`: conexion interna que usa la API cuando corre dentro de Docker Compose.
 
 La API valida estas variables al arrancar y detiene la ejecucion si falta alguna obligatoria o si tiene formato invalido.
 
@@ -52,17 +51,19 @@ $ yarn run start:prod
 
 ## Docker
 
-Para levantar la API junto a PostgreSQL:
+Para levantar PostgreSQL en Docker:
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
 Detalles de la configuracion:
 
-- La aplicacion y PostgreSQL usan la zona horaria `America/La_Paz`.
-- `docker-compose.yml` toma los valores unicamente desde `.env`, sin valores por defecto embebidos.
-- Dentro de Docker, la API se conecta al servicio `db` usando `DOCKER_DB_HOST` y `DOCKER_DB_PORT`.
+- Solo PostgreSQL corre dentro de Docker.
+- La API corre localmente con `yarn start`, `yarn start:dev` o `yarn start:prod`.
+- PostgreSQL usa la zona horaria `America/La_Paz`.
+- `docker-compose.yml` toma los valores desde `.env`.
+- La API local se conecta usando `DB_HOST=localhost` y el `DB_PORT` publicado.
 - Los datos de PostgreSQL se guardan en el volumen `postgres_data`.
 
 ## Run tests
