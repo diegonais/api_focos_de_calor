@@ -8,7 +8,6 @@ export interface EnvironmentVariables {
   NODE_ENV: 'development' | 'test' | 'production';
   PORT: number;
   TZ: string;
-  MAP_KEY: string;
   FIRMS_MAP_KEY: string;
   FIRMS_BASE_URL: string;
   FIRMS_BBOX: string;
@@ -175,12 +174,11 @@ export function validateEnv(config: EnvRecord): EnvironmentVariables {
 
   const port = parsePort('PORT', getStringValue(config, 'PORT'), 3000, errors);
   const timeZone = getStringValue(config, 'TZ') ?? 'America/La_Paz';
-  const mapKey = getStringValue(config, 'MAP_KEY');
-  const firmsMapKey = getStringValue(config, 'FIRMS_MAP_KEY') ?? mapKey;
+  const firmsMapKey = getStringValue(config, 'FIRMS_MAP_KEY');
   validateTimeZone(timeZone, errors);
 
-  if (!mapKey && !firmsMapKey) {
-    errors.push(`MAP_KEY o FIRMS_MAP_KEY es obligatoria.`);
+  if (!firmsMapKey) {
+    errors.push(`FIRMS_MAP_KEY es obligatoria.`);
   }
 
   const firmsBaseUrl =
@@ -293,8 +291,7 @@ export function validateEnv(config: EnvRecord): EnvironmentVariables {
     NODE_ENV: nodeEnv ?? 'development',
     PORT: port,
     TZ: timeZone,
-    MAP_KEY: mapKey ?? firmsMapKey ?? '',
-    FIRMS_MAP_KEY: firmsMapKey ?? mapKey ?? '',
+    FIRMS_MAP_KEY: firmsMapKey ?? '',
     FIRMS_BASE_URL: firmsBaseUrl,
     FIRMS_BBOX: firmsBbox,
     FIRMS_ENABLED_SOURCES: firmsEnabledSourcesRaw as FirmsSource[],
