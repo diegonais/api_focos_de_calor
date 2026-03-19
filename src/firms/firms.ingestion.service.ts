@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 
 import { EnvironmentVariables } from '../config/env.validation';
 import { Detection } from '../detections/entities/detection.entity';
@@ -15,10 +15,12 @@ import { FirmsClient } from './firms.client';
 import { FIRMS_MAX_DAY_RANGE } from './firms.constants';
 import { FirmsMapper } from './firms.mapper';
 import { FirmsSyncWindow, PreparedDetectionRecord } from './firms.types';
+import { ModisDetail } from '../modis_details/entities/modis_detail.entity';
+import { ViirsDetail } from '../viirs_details/entities/viirs_detail.entity';
 
-type InsertedDetectionRow = {
-  id: string;
+type DetectionIdLookupRow = {
   dedupe_key: string;
+  id: string;
 };
 
 type PersistedSourceTotals = {
@@ -284,12 +286,13 @@ export class FirmsIngestionService {
         .returning(['id', 'dedupe_key'])
         .execute();
 
-      const insertedRows = insertResult.raw as InsertedDetectionRow[];
-      const insertedDetectionsByDedupe = new Map(
-        insertedRows.map((row) => [row.dedupe_key, row.id]),
+      const insertedCount = insertResult.identifiers.length;
+      const detectionIdsByDedupe = await this.findDetectionIdsByDedupeKeys(
+        manager,
+        preparedRows.map((row) => row.dedupeKey),
       );
       const viirsDetails = preparedRows.flatMap((row) => {
-        const detectionId = insertedDetectionsByDedupe.get(row.dedupeKey);
+        const detectionId = detectionIdsByDedupe.get(row.dedupeKey);
 
         if (!detectionId || !row.viirsDetail) {
           return [];
@@ -297,14 +300,14 @@ export class FirmsIngestionService {
 
         return [
           {
-            detection_id: detectionId,
-            bright_ti4: row.viirsDetail.brightTi4,
-            bright_ti5: row.viirsDetail.brightTi5,
+            detection: { id: detectionId },
+            brightTi4: row.viirsDetail.brightTi4,
+            brightTi5: row.viirsDetail.brightTi5,
           },
         ];
       });
       const modisDetails = preparedRows.flatMap((row) => {
-        const detectionId = insertedDetectionsByDedupe.get(row.dedupeKey);
+        const detectionId = detectionIdsByDedupe.get(row.dedupeKey);
 
         if (!detectionId || !row.modisDetail) {
           return [];
@@ -312,9 +315,9 @@ export class FirmsIngestionService {
 
         return [
           {
-            detection_id: detectionId,
+            detection: { id: detectionId },
             brightness: row.modisDetail.brightness,
-            bright_t31: row.modisDetail.brightT31,
+            brightT31: row.modisDetail.brightT31,
           },
         ];
       });
@@ -323,8 +326,9 @@ export class FirmsIngestionService {
         await manager
           .createQueryBuilder()
           .insert()
-          .into('viirs_details')
+          .into(ViirsDetail)
           .values(viirsDetails)
+          .orIgnore()
           .execute();
       }
 
@@ -332,17 +336,39 @@ export class FirmsIngestionService {
         await manager
           .createQueryBuilder()
           .insert()
-          .into('modis_details')
+          .into(ModisDetail)
           .values(modisDetails)
+          .orIgnore()
           .execute();
       }
 
       return {
         fetchedCount: preparedRows.length,
-        insertedCount: insertedRows.length,
-        duplicateCount: preparedRows.length - insertedRows.length,
+        insertedCount,
+        duplicateCount: preparedRows.length - insertedCount,
       };
     });
+  }
+
+  private async findDetectionIdsByDedupeKeys(
+    manager: EntityManager,
+    dedupeKeys: string[],
+  ): Promise<Map<string, string>> {
+    const uniqueDedupeKeys = [...new Set(dedupeKeys)];
+
+    if (uniqueDedupeKeys.length === 0) {
+      return new Map();
+    }
+
+    const detectionRows = await manager
+      .createQueryBuilder()
+      .select('d.id', 'id')
+      .addSelect('d.dedupe_key', 'dedupe_key')
+      .from(Detection, 'd')
+      .where('d.dedupe_key IN (:...dedupeKeys)', { dedupeKeys: uniqueDedupeKeys })
+      .getRawMany<DetectionIdLookupRow>();
+
+    return new Map(detectionRows.map((row) => [row.dedupe_key, row.id]));
   }
 
   private getErrorMessage(error: unknown): string {
