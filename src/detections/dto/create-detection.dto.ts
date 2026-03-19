@@ -13,7 +13,10 @@ import {
 import { DetectionSourceType } from '../entities/detection.entity';
 
 export class CreateDetectionDto {
-  @ApiProperty({ enum: DetectionSourceType, example: DetectionSourceType.VIIRS })
+  @ApiProperty({
+    enum: DetectionSourceType,
+    example: DetectionSourceType.VIIRS,
+  })
   @IsEnum(DetectionSourceType)
   sourceType!: DetectionSourceType;
 

@@ -26,7 +26,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const statusCode = isHttpException
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
-    const exceptionResponse = isHttpException ? exception.getResponse() : undefined;
+    const exceptionResponse = isHttpException
+      ? exception.getResponse()
+      : undefined;
     const normalizedResponse =
       typeof exceptionResponse === 'string'
         ? { message: exceptionResponse }
@@ -39,7 +41,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const logContext = `${request.method} ${request.url}`;
 
     if (statusCode >= 500) {
-      this.logger.error(logContext, exception instanceof Error ? exception.stack : undefined);
+      this.logger.error(
+        logContext,
+        exception instanceof Error ? exception.stack : undefined,
+      );
     } else {
       this.logger.warn(`${logContext} - ${JSON.stringify(message)}`);
     }

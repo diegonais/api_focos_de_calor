@@ -1,4 +1,8 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+} from '@nestjs/swagger';
 
 import { PaginationMetaDto } from '../../common/dto/pagination-meta.dto';
 import { DetectionSourceType } from '../entities/detection.entity';
@@ -7,7 +11,10 @@ export class DetectionItemDto {
   @ApiProperty({ example: '0f7d0e6a-d4d2-4d70-96ab-c04c3a5807d1' })
   id!: string;
 
-  @ApiProperty({ enum: DetectionSourceType, example: DetectionSourceType.VIIRS })
+  @ApiProperty({
+    enum: DetectionSourceType,
+    example: DetectionSourceType.VIIRS,
+  })
   source!: DetectionSourceType;
 
   @ApiProperty({ example: -16.489125 })
@@ -53,8 +60,58 @@ export class DetectionItemDto {
   updatedAt!: string;
 }
 
+export class ViirsDetailDto {
+  @ApiProperty({ example: '0f7d0e6a-d4d2-4d70-96ab-c04c3a5807d1' })
+  id!: string;
+
+  @ApiProperty({ example: 335.4 })
+  brightTi4!: number;
+
+  @ApiProperty({ example: 291.2 })
+  brightTi5!: number;
+
+  @ApiProperty({ example: '2026-03-16T15:42:11.310Z' })
+  createdAt!: string;
+
+  @ApiProperty({ example: '2026-03-16T15:42:11.310Z' })
+  updatedAt!: string;
+}
+
+export class ModisDetailDto {
+  @ApiProperty({ example: '0f7d0e6a-d4d2-4d70-96ab-c04c3a5807d1' })
+  id!: string;
+
+  @ApiProperty({ example: 343.1 })
+  brightness!: number;
+
+  @ApiProperty({ example: 295.7 })
+  brightT31!: number;
+
+  @ApiProperty({ example: '2026-03-16T15:42:11.310Z' })
+  createdAt!: string;
+
+  @ApiProperty({ example: '2026-03-16T15:42:11.310Z' })
+  updatedAt!: string;
+}
+
+export class DetectionDetailDto extends DetectionItemDto {
+  @ApiPropertyOptional({
+    nullable: true,
+    oneOf: [
+      { $ref: getSchemaPath(ViirsDetailDto) },
+      { $ref: getSchemaPath(ModisDetailDto) },
+    ],
+    description:
+      'Detalle especifico segun la fuente de la deteccion. Sera VIIRS o MODIS.',
+  })
+  details!: ViirsDetailDto | ModisDetailDto | null;
+}
+
 export class SourceSummaryDto {
-  @ApiProperty({ enum: DetectionSourceType, example: DetectionSourceType.VIIRS })
+  @ApiProperty({
+    enum: DetectionSourceType,
+    example: DetectionSourceType.VIIRS,
+  })
   source!: DetectionSourceType;
 
   @ApiProperty({ example: 94 })
@@ -97,8 +154,8 @@ export class DetectionsListResponseDto extends BaseSuccessResponseDto {
 }
 
 export class DetectionDetailResponseDto extends BaseSuccessResponseDto {
-  @ApiProperty({ type: DetectionItemDto })
-  data!: DetectionItemDto;
+  @ApiProperty({ type: DetectionDetailDto })
+  data!: DetectionDetailDto;
 }
 
 export class DetectionSummaryResponseDto extends BaseSuccessResponseDto {

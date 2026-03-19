@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 
-import {
-  DetectionSourceType,
-} from '../detections/entities/detection.entity';
+import { DetectionSourceType } from '../detections/entities/detection.entity';
 import { FirmsSource } from './firms.constants';
 import {
   DetectionInsertPayload,
@@ -57,7 +55,13 @@ export class FirmsMapper {
     const metadata = SOURCE_METADATA[source];
     const detection: Omit<DetectionInsertPayload, 'dedupeKey'> = {
       sourceType: metadata.sourceType,
-      latitude: this.normalizeDecimal(row.latitude, 6, 'latitude', source, index),
+      latitude: this.normalizeDecimal(
+        row.latitude,
+        6,
+        'latitude',
+        source,
+        index,
+      ),
       longitude: this.normalizeDecimal(
         row.longitude,
         6,
@@ -84,13 +88,7 @@ export class FirmsMapper {
         20,
       ),
       confidence: this.normalizeConfidence(row.confidence, source, index),
-      version: this.normalizeString(
-        row.version,
-        'version',
-        source,
-        index,
-        20,
-      ),
+      version: this.normalizeString(row.version, 'version', source, index, 20),
       frp: this.normalizeDecimal(row.frp, 3, 'frp', source, index),
       daynight: this.normalizeDaynight(row.daynight, source, index),
     };
@@ -181,9 +179,7 @@ export class FirmsMapper {
     const normalizedValue = value?.trim();
 
     if (!normalizedValue) {
-      throw new Error(
-        `Missing ${fieldName} for ${source} row ${index + 1}`,
-      );
+      throw new Error(`Missing ${fieldName} for ${source} row ${index + 1}`);
     }
 
     if (normalizedValue.length > maxLength) {

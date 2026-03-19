@@ -47,7 +47,8 @@ export class FirmsIngestionService {
 
   async runSync(trigger: IngestionRunTrigger): Promise<void> {
     const settings = getFirmsSettings(this.configService);
-    const useHistoricalBootstrap = await this.shouldRunHistoricalBootstrap(trigger);
+    const useHistoricalBootstrap =
+      await this.shouldRunHistoricalBootstrap(trigger);
     const syncWindows = this.resolveSyncWindows(
       trigger,
       settings,
@@ -58,7 +59,9 @@ export class FirmsIngestionService {
       : `incremental sync for the last ${syncWindows[0].dayRange} day(s)`;
 
     if (settings.enabledSources.length === 0) {
-      this.logger.warn('FIRMS ingestion skipped because no sources are configured.');
+      this.logger.warn(
+        'FIRMS ingestion skipped because no sources are configured.',
+      );
       return;
     }
 
@@ -124,7 +127,10 @@ export class FirmsIngestionService {
         } catch (error) {
           const errorMessage = this.getErrorMessage(error);
           sourceErrors.push(`${source}: ${errorMessage}`);
-          this.logger.error(`FIRMS ingestion failed for ${source}`, errorMessage);
+          this.logger.error(
+            `FIRMS ingestion failed for ${source}`,
+            errorMessage,
+          );
         }
       }
     } finally {
@@ -149,7 +155,8 @@ export class FirmsIngestionService {
 
   private async recordSkippedRun(trigger: IngestionRunTrigger): Promise<void> {
     const settings = getFirmsSettings(this.configService);
-    const useHistoricalBootstrap = await this.shouldRunHistoricalBootstrap(trigger);
+    const useHistoricalBootstrap =
+      await this.shouldRunHistoricalBootstrap(trigger);
     const syncWindows = this.resolveSyncWindows(
       trigger,
       settings,
@@ -172,7 +179,8 @@ export class FirmsIngestionService {
         startedAt: now,
         finishedAt: now,
         durationMs: 0,
-        errorMessage: 'Skipped because a previous ingestion run is still active',
+        errorMessage:
+          'Skipped because a previous ingestion run is still active',
       }),
     );
   }
@@ -180,7 +188,9 @@ export class FirmsIngestionService {
   private resolveLookbackDays(
     settings: ReturnType<typeof getFirmsSettings>,
   ): number {
-    const startDate = new Date(`${settings.initialSyncStartDate}T00:00:00.000Z`);
+    const startDate = new Date(
+      `${settings.initialSyncStartDate}T00:00:00.000Z`,
+    );
     const today = new Date();
     const currentDateUtc = Date.UTC(
       today.getUTCFullYear(),
@@ -218,7 +228,9 @@ export class FirmsIngestionService {
     }
 
     const totalHistoricalDays = this.resolveLookbackDays(settings);
-    const startDate = new Date(`${settings.initialSyncStartDate}T00:00:00.000Z`);
+    const startDate = new Date(
+      `${settings.initialSyncStartDate}T00:00:00.000Z`,
+    );
     const windows: FirmsSyncWindow[] = [];
 
     for (
@@ -231,7 +243,10 @@ export class FirmsIngestionService {
 
       windows.push({
         startDate: this.formatUtcDate(windowStartDate),
-        dayRange: Math.min(FIRMS_MAX_DAY_RANGE, totalHistoricalDays - dayOffset),
+        dayRange: Math.min(
+          FIRMS_MAX_DAY_RANGE,
+          totalHistoricalDays - dayOffset,
+        ),
       });
     }
 
@@ -286,7 +301,11 @@ export class FirmsIngestionService {
         .returning(['id', 'dedupe_key'])
         .execute();
 
-      const insertedCount = insertResult.identifiers.length;
+      // With `orIgnore()`, TypeORM identifiers can include attempted rows.
+      // Postgres `raw` reflects rows actually inserted by RETURNING.
+      const insertedCount = Array.isArray(insertResult.raw)
+        ? insertResult.raw.length
+        : 0;
       const detectionIdsByDedupe = await this.findDetectionIdsByDedupeKeys(
         manager,
         preparedRows.map((row) => row.dedupeKey),
@@ -365,7 +384,9 @@ export class FirmsIngestionService {
       .select('d.id', 'id')
       .addSelect('d.dedupe_key', 'dedupe_key')
       .from(Detection, 'd')
-      .where('d.dedupe_key IN (:...dedupeKeys)', { dedupeKeys: uniqueDedupeKeys })
+      .where('d.dedupe_key IN (:...dedupeKeys)', {
+        dedupeKeys: uniqueDedupeKeys,
+      })
       .getRawMany<DetectionIdLookupRow>();
 
     return new Map(detectionRows.map((row) => [row.dedupe_key, row.id]));

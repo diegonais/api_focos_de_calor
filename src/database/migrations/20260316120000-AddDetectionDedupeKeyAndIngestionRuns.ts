@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class AddDetectionDedupeKeyAndIngestionRuns20260316120000
-  implements MigrationInterface
-{
+export class AddDetectionDedupeKeyAndIngestionRuns20260316120000 implements MigrationInterface {
   public readonly name = 'AddDetectionDedupeKeyAndIngestionRuns20260316120000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -191,7 +189,10 @@ export class AddDetectionDedupeKeyAndIngestionRuns20260316120000
       DROP TRIGGER IF EXISTS "TRG_ingestion_runs_set_updated_at" ON "ingestion_runs"
     `);
     await queryRunner.dropIndex('ingestion_runs', 'IDX_ingestion_runs_status');
-    await queryRunner.dropIndex('ingestion_runs', 'IDX_ingestion_runs_started_at');
+    await queryRunner.dropIndex(
+      'ingestion_runs',
+      'IDX_ingestion_runs_started_at',
+    );
     await queryRunner.dropTable('ingestion_runs');
     await queryRunner.query(`
       DROP TYPE IF EXISTS "public"."ingestion_runs_trigger_enum"

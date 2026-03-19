@@ -10,11 +10,6 @@ import { FirmsScheduler } from './firms.scheduler';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Detection, IngestionRun])],
-  providers: [
-    FirmsClient,
-    FirmsMapper,
-    FirmsIngestionService,
-    FirmsScheduler,
-  ],
+  providers: [FirmsClient, FirmsMapper, FirmsIngestionService, FirmsScheduler],
 })
 export class FirmsModule {}

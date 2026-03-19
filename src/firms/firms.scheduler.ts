@@ -14,9 +14,7 @@ import { FIRMS_SYNC_INTERVAL_NAME } from './firms.constants';
 import { FirmsIngestionService } from './firms.ingestion.service';
 
 @Injectable()
-export class FirmsScheduler
-  implements OnApplicationBootstrap, OnModuleDestroy
-{
+export class FirmsScheduler implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(FirmsScheduler.name);
 
   constructor(
@@ -27,9 +25,9 @@ export class FirmsScheduler
 
   onApplicationBootstrap(): void {
     const settings = getFirmsSettings(this.configService);
-    const nodeEnv = this.configService.getOrThrow<'development' | 'test' | 'production'>(
-      'NODE_ENV',
-    );
+    const nodeEnv = this.configService.getOrThrow<
+      'development' | 'test' | 'production'
+    >('NODE_ENV');
 
     if (nodeEnv === 'test') {
       this.logger.log('FIRMS scheduler disabled for test environment.');
@@ -65,9 +63,12 @@ export class FirmsScheduler
       this.schedulerRegistry.deleteInterval(FIRMS_SYNC_INTERVAL_NAME);
     }
 
-    const interval = setInterval(() => {
-      void this.firmsIngestionService.runSync(IngestionRunTrigger.SCHEDULED);
-    }, syncEveryMinutes * 60 * 1000);
+    const interval = setInterval(
+      () => {
+        void this.firmsIngestionService.runSync(IngestionRunTrigger.SCHEDULED);
+      },
+      syncEveryMinutes * 60 * 1000,
+    );
 
     this.schedulerRegistry.addInterval(FIRMS_SYNC_INTERVAL_NAME, interval);
     this.logger.log(

@@ -171,7 +171,10 @@ export class CreateDetectionsTable20260316110100 implements MigrationInterface {
     `);
     await queryRunner.dropIndex('detections', 'IDX_detections_source_type');
     await queryRunner.dropIndex('detections', 'IDX_detections_satellite');
-    await queryRunner.dropIndex('detections', 'IDX_detections_latitude_longitude');
+    await queryRunner.dropIndex(
+      'detections',
+      'IDX_detections_latitude_longitude',
+    );
     await queryRunner.dropIndex('detections', 'IDX_detections_acq_date');
     await queryRunner.dropTable('detections');
     await queryRunner.query(`

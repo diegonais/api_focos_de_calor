@@ -60,7 +60,11 @@ function parsePort(
 
   const parsedValue = Number(value);
 
-  if (!Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 65535) {
+  if (
+    !Number.isInteger(parsedValue) ||
+    parsedValue < 1 ||
+    parsedValue > 65535
+  ) {
     errors.push(`${key} debe ser un numero entero entre 1 y 65535.`);
     return fallback;
   }
@@ -132,7 +136,9 @@ function validateBbox(value: string, errors: string[]): void {
     return;
   }
 
-  const hasInvalidCoordinate = parts.some((item) => !Number.isFinite(Number(item)));
+  const hasInvalidCoordinate = parts.some(
+    (item) => !Number.isFinite(Number(item)),
+  );
 
   if (hasInvalidCoordinate) {
     errors.push(`FIRMS_BBOX debe contener coordenadas numericas validas.`);
@@ -156,7 +162,9 @@ function validateTimeZone(timeZone: string, errors: string[]): void {
   try {
     Intl.DateTimeFormat('en-US', { timeZone }).format(new Date());
   } catch {
-    errors.push(`TZ no es una zona horaria valida. Ejemplo esperado: America/La_Paz.`);
+    errors.push(
+      `TZ no es una zona horaria valida. Ejemplo esperado: America/La_Paz.`,
+    );
   }
 }
 
@@ -247,11 +255,21 @@ export function validateEnv(config: EnvRecord): EnvironmentVariables {
 
   const databaseUrl = getStringValue(config, 'DATABASE_URL');
   const dbHost = getStringValue(config, 'DB_HOST');
-  const dbPort = parsePort('DB_PORT', getStringValue(config, 'DB_PORT'), 5432, errors);
+  const dbPort = parsePort(
+    'DB_PORT',
+    getStringValue(config, 'DB_PORT'),
+    5432,
+    errors,
+  );
   const dbUsername = getStringValue(config, 'DB_USERNAME');
   const dbPassword = getStringValue(config, 'DB_PASSWORD');
   const dbName = getStringValue(config, 'DB_NAME');
-  const dbSsl = parseBoolean('DB_SSL', getStringValue(config, 'DB_SSL'), false, errors);
+  const dbSsl = parseBoolean(
+    'DB_SSL',
+    getStringValue(config, 'DB_SSL'),
+    false,
+    errors,
+  );
   const dbSynchronize = parseBoolean(
     'DB_SYNCHRONIZE',
     getStringValue(config, 'DB_SYNCHRONIZE'),
@@ -267,24 +285,34 @@ export function validateEnv(config: EnvRecord): EnvironmentVariables {
 
   if (!databaseUrl) {
     if (!dbHost) {
-      errors.push(`DB_HOST es obligatorio cuando DATABASE_URL no esta definido.`);
+      errors.push(
+        `DB_HOST es obligatorio cuando DATABASE_URL no esta definido.`,
+      );
     }
 
     if (!dbUsername) {
-      errors.push(`DB_USERNAME es obligatorio cuando DATABASE_URL no esta definido.`);
+      errors.push(
+        `DB_USERNAME es obligatorio cuando DATABASE_URL no esta definido.`,
+      );
     }
 
     if (!dbPassword) {
-      errors.push(`DB_PASSWORD es obligatorio cuando DATABASE_URL no esta definido.`);
+      errors.push(
+        `DB_PASSWORD es obligatorio cuando DATABASE_URL no esta definido.`,
+      );
     }
 
     if (!dbName) {
-      errors.push(`DB_NAME es obligatorio cuando DATABASE_URL no esta definido.`);
+      errors.push(
+        `DB_NAME es obligatorio cuando DATABASE_URL no esta definido.`,
+      );
     }
   }
 
   if (errors.length > 0) {
-    throw new Error(`La validacion de variables de entorno fallo:\n- ${errors.join('\n- ')}`);
+    throw new Error(
+      `La validacion de variables de entorno fallo:\n- ${errors.join('\n- ')}`,
+    );
   }
 
   return {

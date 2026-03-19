@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateViirsDetailsTable20260316110200
-  implements MigrationInterface
-{
+export class CreateViirsDetailsTable20260316110200 implements MigrationInterface {
   public readonly name = 'CreateViirsDetailsTable20260316110200';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -90,8 +88,14 @@ export class CreateViirsDetailsTable20260316110200
     await queryRunner.query(`
       DROP TRIGGER IF EXISTS "TRG_viirs_details_set_updated_at" ON "viirs_details"
     `);
-    await queryRunner.dropIndex('viirs_details', 'UQ_viirs_details_detection_id');
-    await queryRunner.dropForeignKey('viirs_details', 'FK_viirs_details_detection_id');
+    await queryRunner.dropIndex(
+      'viirs_details',
+      'UQ_viirs_details_detection_id',
+    );
+    await queryRunner.dropForeignKey(
+      'viirs_details',
+      'FK_viirs_details_detection_id',
+    );
     await queryRunner.dropTable('viirs_details');
   }
 }
