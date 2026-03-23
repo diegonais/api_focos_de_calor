@@ -169,7 +169,7 @@ export class DetectionsRepository {
           created_at,
           updated_at
         FROM detections
-        ORDER BY acq_date DESC, created_at DESC
+        ORDER BY acq_date DESC, created_at DESC, id DESC
       `),
       this.detectionRepository.query(`
         SELECT
@@ -243,6 +243,7 @@ export class DetectionsRepository {
 
     return queryBuilder
       .orderBy('detection.acqDate', 'DESC')
-      .addOrderBy('detection.createdAt', 'DESC');
+      .addOrderBy('detection.createdAt', 'DESC')
+      .addOrderBy('detection.id', 'DESC');
   }
 }

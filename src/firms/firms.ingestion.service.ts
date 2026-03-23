@@ -149,6 +149,14 @@ export class FirmsIngestionService {
         sourceErrors.length > 0 ? sourceErrors.join(' | ') : null;
       await this.ingestionRunRepository.save(run);
 
+      const completionMessage = `---Finished FIRMS ${syncMode}. status=${run.status}, fetched=${fetchedCount}, inserted=${insertedCount}, duplicates=${duplicateCount}, durationMs=${run.durationMs}.---`;
+
+      if (run.status === IngestionRunStatus.SUCCEEDED) {
+        this.logger.log(completionMessage);
+      } else {
+        this.logger.warn(completionMessage);
+      }
+
       this.isRunning = false;
     }
   }
