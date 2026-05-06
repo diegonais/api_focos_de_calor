@@ -309,8 +309,8 @@ Los filtros principales estan disponibles en `GET /api_fdc/detections`.
 
 | Parametro | Tipo | Ejemplo | Estado | Descripción |
 | --- | --- | --- | --- | --- |
-| `date_from` | `string` | `2026-03-01` | Activo | Fecha inicial inclusive en formato `YYYY-MM-DD`. |
-| `date_to` | `string` | `2026-03-16` | Activo | Fecha final inclusive en formato `YYYY-MM-DD`. |
+| `date_from` | `string` | `2026-03-01` | Activo | Fecha inicial inclusive en formato `YYYY-MM-DD`, interpretada en zona horaria `America/La_Paz`. |
+| `date_to` | `string` | `2026-03-16` | Activo | Fecha final inclusive en formato `YYYY-MM-DD`, interpretada en zona horaria `America/La_Paz`. |
 | `source` | `string` | `VIIRS` | Activo | Fuente del dato. Valores válidos: `VIIRS`, `MODIS`. |
 | `satellite` | `string` | `NOAA-20` | Activo | Filtra por satelite reportado. |
 | `min_confidence` | `number` | `70` | Activo | Filtra por confianza mínima numérica. |

@@ -33,7 +33,8 @@ export class FindDetectionsQueryDto {
   @ApiPropertyOptional({
     name: 'date_from',
     example: '2026-03-01',
-    description: 'Fecha inicial inclusive en formato YYYY-MM-DD.',
+    description:
+      'Fecha inicial inclusive en formato YYYY-MM-DD, interpretada en la zona horaria America/La_Paz.',
   })
   @Transform(trimString)
   @IsOptional()
@@ -43,7 +44,8 @@ export class FindDetectionsQueryDto {
   @ApiPropertyOptional({
     name: 'date_to',
     example: '2026-03-16',
-    description: 'Fecha final inclusive en formato YYYY-MM-DD.',
+    description:
+      'Fecha final inclusive en formato YYYY-MM-DD, interpretada en la zona horaria America/La_Paz.',
   })
   @Transform(trimString)
   @IsOptional()

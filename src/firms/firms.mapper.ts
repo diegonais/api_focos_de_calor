@@ -15,6 +15,17 @@ type FirmsSourceMetadata = {
   instrumentFallback: string;
 };
 
+const BOLIVIA_TIME_ZONE = 'America/La_Paz';
+const ACQ_DATE_TIME_FORMATTER = new Intl.DateTimeFormat('en-CA', {
+  timeZone: BOLIVIA_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+
 const SOURCE_METADATA: Record<FirmsSource, FirmsSourceMetadata> = {
   [FirmsSource.VIIRS_SNPP_NRT]: {
     sourceType: DetectionSourceType.VIIRS,
@@ -53,6 +64,14 @@ export class FirmsMapper {
     index: number,
   ): PreparedDetectionRecord {
     const metadata = SOURCE_METADATA[source];
+    const acqDateUtc = this.normalizeDate(row.acq_date, source, index);
+    const acqTimeUtc = this.normalizeAcqTime(row.acq_time, source, index);
+    const localAcqDateTime = this.convertUtcAcqDateTimeToBolivia(
+      acqDateUtc,
+      acqTimeUtc,
+      source,
+      index,
+    );
     const detection: Omit<DetectionInsertPayload, 'dedupeKey'> = {
       sourceType: metadata.sourceType,
       latitude: this.normalizeDecimal(
@@ -71,8 +90,8 @@ export class FirmsMapper {
       ),
       scan: this.normalizeDecimal(row.scan, 3, 'scan', source, index),
       track: this.normalizeDecimal(row.track, 3, 'track', source, index),
-      acqDate: this.normalizeDate(row.acq_date, source, index),
-      acqTime: this.normalizeInteger(row.acq_time, 'acq_time', source, index),
+      acqDate: localAcqDateTime.acqDate,
+      acqTime: localAcqDateTime.acqTime,
       satellite: this.normalizeString(
         row.satellite || metadata.satelliteFallback,
         'satellite',
@@ -205,20 +224,70 @@ export class FirmsMapper {
     return normalizedValue;
   }
 
-  private normalizeInteger(
+  private normalizeAcqTime(
     value: string | undefined,
-    fieldName: string,
     source: FirmsSource,
     index: number,
   ): number {
     const normalizedValue = value?.trim();
-    const parsedValue = Number(normalizedValue);
-
-    if (!normalizedValue || !Number.isInteger(parsedValue) || parsedValue < 0) {
-      throw new Error(`Invalid ${fieldName} for ${source} row ${index + 1}`);
+    if (!normalizedValue || !/^\d{1,4}$/.test(normalizedValue)) {
+      throw new Error(`Invalid acq_time for ${source} row ${index + 1}`);
     }
 
-    return parsedValue;
+    const paddedTime = normalizedValue.padStart(4, '0');
+    const hours = Number(paddedTime.slice(0, 2));
+    const minutes = Number(paddedTime.slice(2, 4));
+
+    if (hours > 23 || minutes > 59) {
+      throw new Error(`Invalid acq_time for ${source} row ${index + 1}`);
+    }
+
+    return Number(paddedTime);
+  }
+
+  private convertUtcAcqDateTimeToBolivia(
+    acqDateUtc: string,
+    acqTimeUtc: number,
+    source: FirmsSource,
+    index: number,
+  ): { acqDate: string; acqTime: number } {
+    const dateMatch = acqDateUtc.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (!dateMatch) {
+      throw new Error(`Invalid acq_date for ${source} row ${index + 1}`);
+    }
+
+    const year = Number(dateMatch[1]);
+    const month = Number(dateMatch[2]);
+    const day = Number(dateMatch[3]);
+    const paddedUtcTime = String(acqTimeUtc).padStart(4, '0');
+    const hours = Number(paddedUtcTime.slice(0, 2));
+    const minutes = Number(paddedUtcTime.slice(2, 4));
+    const utcTimestamp = Date.UTC(year, month - 1, day, hours, minutes, 0, 0);
+    const parts = ACQ_DATE_TIME_FORMATTER.formatToParts(new Date(utcTimestamp));
+    const partMap = new Map(parts.map((part) => [part.type, part.value]));
+    const localYear = partMap.get('year');
+    const localMonth = partMap.get('month');
+    const localDay = partMap.get('day');
+    const localHours = partMap.get('hour');
+    const localMinutes = partMap.get('minute');
+
+    if (
+      !localYear ||
+      !localMonth ||
+      !localDay ||
+      !localHours ||
+      !localMinutes
+    ) {
+      throw new Error(
+        `Could not convert acq_date/acq_time to ${BOLIVIA_TIME_ZONE} for ${source} row ${index + 1}`,
+      );
+    }
+
+    return {
+      acqDate: `${localYear}-${localMonth}-${localDay}`,
+      acqTime: Number(`${localHours}${localMinutes}`),
+    };
   }
 
   private normalizeDecimal(

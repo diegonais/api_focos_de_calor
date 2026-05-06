@@ -29,10 +29,18 @@ export class DetectionItemDto {
   @ApiProperty({ example: 1.157 })
   track!: number;
 
-  @ApiProperty({ example: '2026-03-16' })
+  @ApiProperty({
+    example: '2026-03-16',
+    description:
+      'Fecha local de adquisicion en la zona horaria America/La_Paz.',
+  })
   acqDate!: string;
 
-  @ApiProperty({ example: 1435 })
+  @ApiProperty({
+    example: 1035,
+    description:
+      'Hora local de adquisicion en formato HHMM en la zona horaria America/La_Paz.',
+  })
   acqTime!: number;
 
   @ApiProperty({ example: 'NOAA-20' })
