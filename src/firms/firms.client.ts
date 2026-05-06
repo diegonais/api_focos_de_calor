@@ -8,6 +8,8 @@ import { FirmsCsvRecord } from './firms.types';
 
 @Injectable()
 export class FirmsClient {
+  private static readonly MAX_ERROR_DETAIL_LENGTH = 500;
+
   constructor(
     private readonly configService: ConfigService<EnvironmentVariables>,
   ) {}
@@ -26,16 +28,28 @@ export class FirmsClient {
       dayRange,
       startDate,
     );
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'text/csv',
-      },
-      signal: AbortSignal.timeout(settings.requestTimeoutMs),
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        headers: {
+          Accept: 'text/csv',
+        },
+        signal: AbortSignal.timeout(settings.requestTimeoutMs),
+      });
+    } catch (error) {
+      throw new Error(
+        `FIRMS request failed for ${source}: ${this.formatTransportError(error)}`,
+      );
+    }
 
     if (!response.ok) {
+      const errorDetail = await this.readErrorDetail(response);
+      const statusText = response.statusText ? ` ${response.statusText}` : '';
+      const detailMessage = errorDetail ? `. Detail: ${errorDetail}` : '';
+
       throw new Error(
-        `FIRMS request failed for ${source} with status ${response.status}`,
+        `FIRMS request failed for ${source} with status ${response.status}${statusText}${detailMessage}`,
       );
     }
 
@@ -60,6 +74,40 @@ export class FirmsClient {
     }
 
     return `${basePath}/${startDate}`;
+  }
+
+  private async readErrorDetail(response: Response): Promise<string | null> {
+    try {
+      const responseText = await response.text();
+      const normalizedDetail = responseText.replace(/\s+/g, ' ').trim();
+
+      if (!normalizedDetail) {
+        return null;
+      }
+
+      if (normalizedDetail.length <= FirmsClient.MAX_ERROR_DETAIL_LENGTH) {
+        return normalizedDetail;
+      }
+
+      return `${normalizedDetail.slice(
+        0,
+        FirmsClient.MAX_ERROR_DETAIL_LENGTH,
+      )}...`;
+    } catch {
+      return 'Could not read FIRMS error response body';
+    }
+  }
+
+  private formatTransportError(error: unknown): string {
+    if (error instanceof Error) {
+      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+        return `request timeout (${error.message})`;
+      }
+
+      return `${error.name}: ${error.message}`;
+    }
+
+    return 'Unknown network error';
   }
 
   private parseCsv(csv: string): FirmsCsvRecord[] {
